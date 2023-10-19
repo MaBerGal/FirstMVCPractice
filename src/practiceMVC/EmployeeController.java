@@ -6,9 +6,6 @@ public class EmployeeController<E> {
     private Node<E> firstNode;
     private Node<E> lastNode;
 
-    // Fields for the filtered list of employees
-    private Node<E> filteredFirstNode;
-    private Node<E> filteredLastNode;
 
     // Counter attribute for the total elements
     private int totalElements = 0;
@@ -16,8 +13,6 @@ public class EmployeeController<E> {
     public EmployeeController() {
         this.firstNode = null;
         this.lastNode = null;
-        this.filteredFirstNode = null;
-        this.filteredLastNode = null;
     }
 
     public void showMyListForward() {
@@ -108,61 +103,6 @@ public class EmployeeController<E> {
         return lastNode;
     }
 
-    public void showFullEmployeeList() {
-        // Clear any existing filter results and display the full list
-        clearFilterResults();
-    }
-
-    public void filterByHireYear(int year) {
-        // Clear any existing filter results
-        clearFilterResults();
-
-        // Iterate through the employees and add those hired in the specified year to the filtered list
-        Node<E> currentNode = firstNode;
-        while (currentNode != null) {
-            EmployeeModel employee = (EmployeeModel) currentNode.getMain();
-            if (employee.getHireDate() != null && employee.getHireDate().get(Calendar.YEAR) == year) {
-                // Add this employee to the filtered list
-                if (filteredFirstNode == null) {
-                    filteredFirstNode = (Node<E>) new Node<>(employee);
-                    filteredLastNode = filteredFirstNode;
-                } else {
-                    Node<E> newNode = (Node<E>) new Node<>(employee);
-                    newNode.setPreviousNode(filteredLastNode);
-                    filteredLastNode.setNextNode(newNode);
-                    filteredLastNode = newNode;
-                }
-            }
-            currentNode = currentNode.getNextNode();
-        }
-    }
-
-    public void clearFilterResults() {
-        // Clear any previously filtered results
-        filteredFirstNode = null;
-        filteredLastNode = null;
-    }
-
-    // Add this method to encapsulate adding an employee to the filtered list
-    private void addEmployeeToFilteredList(EmployeeModel employee) {
-        Node<E> newNode = new Node<E>((E) employee);
-        if (filteredFirstNode == null) {
-            filteredFirstNode = newNode;
-            filteredLastNode = newNode;
-        } else {
-            newNode.setPreviousNode(filteredLastNode);
-            filteredLastNode.setNextNode(newNode);
-            filteredLastNode = newNode;
-        }
-    }
-
-    public Node<E> getFilteredFirstNode() {
-        return filteredFirstNode;
-    }
-
-    public Node<E> getFilteredLastNode() {
-        return filteredLastNode;
-    }
 
     // Inner class
     public class Node<E> {

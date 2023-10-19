@@ -226,11 +226,19 @@ public class EmployeeView {
         nextButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null && currentEmployeeNode.getNextNode() != null) {
-                    System.out.println("Switching to next employee");
-                    currentEmployeeNode = currentEmployeeNode.getNextNode();
-                    displayCurrentEmployee();
-                    updateButtonStates(); // Update button states
+                if (currentEmployeeNode != null) {
+                    EmployeeController<EmployeeModel>.Node<EmployeeModel> nextEmployeeNode = currentEmployeeNode.getNextNode();
+
+                    while (nextEmployeeNode != null) {
+                        EmployeeModel nextEmployee = nextEmployeeNode.getMain();
+                        if (!isFilterApplied || (nextEmployee.getHireDate() != null && nextEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
+                            currentEmployeeNode = nextEmployeeNode;
+                            displayCurrentEmployee();
+                            updateButtonStates();
+                            return;
+                        }
+                        nextEmployeeNode = nextEmployeeNode.getNextNode();
+                    }
                 }
             }
         });
@@ -238,14 +246,23 @@ public class EmployeeView {
         backButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null && currentEmployeeNode.getPreviousNode() != null) {
-                    System.out.println("Switching to previous employee");
-                    currentEmployeeNode = currentEmployeeNode.getPreviousNode();
-                    displayCurrentEmployee();
-                    updateButtonStates(); // Update button states
+                if (currentEmployeeNode != null) {
+                    EmployeeController<EmployeeModel>.Node<EmployeeModel> previousEmployeeNode = currentEmployeeNode.getPreviousNode();
+
+                    while (previousEmployeeNode != null) {
+                        EmployeeModel previousEmployee = previousEmployeeNode.getMain();
+                        if (!isFilterApplied || (previousEmployee.getHireDate() != null && previousEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
+                            currentEmployeeNode = previousEmployeeNode;
+                            displayCurrentEmployee();
+                            updateButtonStates();
+                            return;
+                        }
+                        previousEmployeeNode = previousEmployeeNode.getPreviousNode();
+                    }
                 }
             }
         });
+
 
         System.out.println("Adding ActionListener to deleteButton");
         deleteButton.addActionListener(new ActionListener() {
@@ -332,16 +349,6 @@ public class EmployeeView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 toggleFilterButton();
-
-                if (isFilterApplied) {
-                    // Apply the filter to show only employees hired in 2023
-                    employeeController.filterByHireYear(2023);
-                } else {
-                    // Undo the filter to show the full list
-                    employeeController.showFullEmployeeList();
-                }
-                // Refresh the current employee node
-                currentEmployeeNode = employeeController.getFirstNode();
                 displayCurrentEmployee();
                 updateButtonStates();
             }
@@ -372,14 +379,46 @@ public class EmployeeView {
     }
 
     private void updateButtonStates() {
-        // Disable the back button if there's no previous employee
-        backButton.setEnabled(currentEmployeeNode != null && currentEmployeeNode.getPreviousNode() != null);
+        // Disable the back button if there's no previous employee matching the filter
+        backButton.setEnabled(currentEmployeeNode != null && hasPreviousMatchingEmployee(currentEmployeeNode));
 
-        // Disable the next button if there's no next employee
-        nextButton.setEnabled(currentEmployeeNode != null && currentEmployeeNode.getNextNode() != null);
+        // Disable the next button if there's no previous employee matching the filter
+        nextButton.setEnabled(currentEmployeeNode != null && hasNextMatchingEmployee(currentEmployeeNode));
 
         // Disable the delete button if there's no current employee
         deleteButton.setEnabled(currentEmployeeNode != null);
+    }
+
+    private boolean hasPreviousMatchingEmployee(EmployeeController<EmployeeModel>.Node<EmployeeModel> node) {
+        if (node == null) {
+            return false;
+        }
+
+        EmployeeController<EmployeeModel>.Node<EmployeeModel> previousNode = node.getPreviousNode();
+        while (previousNode != null) {
+            EmployeeModel previousEmployee = previousNode.getMain();
+            if (!isFilterApplied || (previousEmployee.getHireDate() != null && previousEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
+                return true;
+            }
+            previousNode = previousNode.getPreviousNode();
+        }
+        return false;
+    }
+
+    private boolean hasNextMatchingEmployee(EmployeeController<EmployeeModel>.Node<EmployeeModel> node) {
+        if (node == null) {
+            return false;
+        }
+
+        EmployeeController<EmployeeModel>.Node<EmployeeModel> nextNode = node.getNextNode();
+        while (nextNode != null) {
+            EmployeeModel nextEmployee = nextNode.getMain();
+            if (!isFilterApplied || (nextEmployee.getHireDate() != null && nextEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
+                return true;
+            }
+            nextNode = nextNode.getNextNode();
+        }
+        return false;
     }
 
 
@@ -392,12 +431,6 @@ public class EmployeeView {
             // Handle undoing the filter
         }
     }
-
-    private void showFullEmployeeList() {
-        // Switch back to the full employee list
-        switchToViewMode();
-    }
-
 
 
     private JPanel createCreationModeComponents() {
@@ -595,19 +628,56 @@ public class EmployeeView {
     private void displayCurrentEmployee() {
         if (currentEmployeeNode != null) {
             EmployeeModel employee = currentEmployeeNode.getMain();
-
-            // Get the current position and total employees from the controller
-            int currentPosition = employeeController.getPosition(employee)+1;
+            int currentPosition = employeeController.getPosition(employee) + 1;
             int totalEmployees = employeeController.getTotalElements();
 
-            // Display the position and total employees
+            // Create HTML-formatted text to display information
             StringBuilder labelText = new StringBuilder("<html>");
-            labelText.append("<h2>Employee #").append(currentPosition).append(" of ").append(totalEmployees).append("</h2><br>");
-            labelText.append("Name: ").append(employee.getName()).append("<br>");
-            labelText.append("Employee Number: ").append(employee.getEmployeeNumber()).append("<br>");
-            labelText.append("Hire Date: ").append(employee.getHireDate()).append("<br>");
-            labelText.append("Phone: ").append(employee.getPhoneNumber()).append("<br>");
-            labelText.append("Email: ").append(employee.getEmailAddress()).append("<br>");
+            labelText.append("<h2 style='color: #007acc;'>Employee #").append(currentPosition).append(" of ").append(totalEmployees).append("</h2><br>");
+            labelText.append("<font color='#008000'><b>Name:</b></font> ").append(employee.getName()).append("<br>");
+            labelText.append("<font color='#008000'><b>Employee Number:</b></font> ").append(employee.getEmployeeNumber()).append("<br>");
+
+            if (isFilterApplied) {
+                // Check if hireDate is null or not in 2023, and skip employees who don't match the filter
+                if (employee.getHireDate() == null || employee.getHireDate().get(Calendar.YEAR) != 2023) {
+                    // Find the next matching employee
+                    EmployeeController<EmployeeModel>.Node<EmployeeModel> nextEmployeeNode = currentEmployeeNode;
+                    while (nextEmployeeNode != null && (nextEmployeeNode.getMain().getHireDate() == null
+                            || nextEmployeeNode.getMain().getHireDate().get(Calendar.YEAR) != 2023)) {
+                        nextEmployeeNode = nextEmployeeNode.getNextNode();
+                    }
+
+                    if (nextEmployeeNode != null) {
+                        currentEmployeeNode = nextEmployeeNode;
+                        employee = currentEmployeeNode.getMain();
+                        currentPosition = employeeController.getPosition(employee) + 1;
+                    } else {
+                        labelText.append("No more employees hired in 2023 to display.");
+                        employeeInfoLabel.setText(labelText.toString());
+                        return;
+                    }
+                }
+            }
+
+            // Check if hireDate, phone, and email are not null or empty
+            if (employee.getHireDate() != null) {
+                labelText.append("<font color='#008000'><b>Hire Date:</b></font> ").append(formatGregorianCalendar(employee.getHireDate())).append("<br>");
+            } else {
+                labelText.append("<font color='red'><b>Hire Date:</b></font> Not specified yet<br>");
+            }
+
+            if (!employee.getPhoneNumber().isEmpty()) {
+                labelText.append("<font color='green'><b>Phone:</b></font> ").append(employee.getPhoneNumber()).append("<br>");
+            } else {
+                labelText.append("<font color='red'><b>Phone:</b></font> Not specified yet<br>");
+            }
+
+            if (!employee.getEmailAddress().isEmpty()) {
+                labelText.append("<font color='green'><b>Email:</b></font> ").append(employee.getEmailAddress()).append("<br>");
+            } else {
+                labelText.append("<font color='red'><b>Email:</b></font> Not specified yet<br>");
+            }
+
             labelText.append("</html>");
             employeeInfoLabel.setText(labelText.toString());
         } else {
@@ -616,6 +686,11 @@ public class EmployeeView {
         }
     }
 
+    // Helper method to format a GregorianCalendar instance to "dd/MM/yyyy" format
+    private String formatGregorianCalendar(GregorianCalendar calendar) {
+        SimpleDateFormat simplifiefDate = new SimpleDateFormat("dd/MM/yyyy");
+        return simplifiefDate.format(calendar.getTime());
+    }
 
 
     public static void main(String[] args) {
