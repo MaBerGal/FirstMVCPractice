@@ -1,85 +1,174 @@
 package practiceMVC;
 
+// For Swing and native system GUI functionality.
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
-import java.util.Calendar;
+// In order to find and set an icon image.
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
-// Placeholder funcionality
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-
-// Max character limit functionality
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.*;
-
-
+/**
+ * Class that represents the user interface view for employee management.
+ */
 public class EmployeeView {
-    private EmployeeController employeeController;
+    /**
+     * Controller for managing employee data.
+     */
+    private ListController employeeController;
+
+    /**
+     * Controller for view-related functionality.
+     */
+    private ViewController viewController;
+
+    /**
+     * Represents the currently selected employee.
+     */
     private EmployeeModel currentEmployee;
 
+    /**
+     * Label for displaying employee information.
+     */
     private JLabel employeeInfoLabel = new JLabel();
-    private EmployeeController<EmployeeModel>.Node<EmployeeModel> currentEmployeeNode;
 
-    private enum Mode {
+    /**
+     * Node representing the current employee in the controller's linked list.
+     */
+    private ListController<EmployeeModel>.Node<EmployeeModel> currentEmployeeNode;
+
+    /**
+     * Enumeration representing the two modes of the employee data input view.
+     */
+    public enum Mode {
         CREATE,
         MODIFY
     }
 
+    /**
+     * The current mode of the view.
+     */
     private Mode currentMode;
 
-
+    /**
+     * Text fields for entering employee information.
+     */
     private JTextField nameField, employeeNumberField, hireDateField, phoneField, emailField;
-    String placeHolderName = "Enter name here";
-    String placeHolderNumber = "#####";
-    String placeHolderDate = "DD/MM/YYYY";
-    String placeHolderPhone = "9 digits";
-    String placeHolderEmail = "example@mail.com";
+
+    /**
+     * Placeholder text for name input.
+     */
+    private String placeHolderName = "Enter name here";
+
+    /**
+     * Placeholder text for employee number input.
+     */
+    private String placeHolderNumber = "#####";
+
+    /**
+     * Placeholder text for hire date input.
+     */
+    private String placeHolderDate = "DD/MM/YYYY";
+
+    /**
+     * Placeholder text for phone number input.
+     */
+    private String placeHolderPhone = "9 digits";
+
+    /**
+     * Placeholder text for email address input.
+     */
+    private String placeHolderEmail = "example@mail.com";
+
+    /**
+     * Buttons for user interactions.
+     */
     private JButton backButton, nextButton, deleteButton, createButton, modifyButton, filterButton;
 
+    /**
+     * Flag indicating whether the filter is applied.
+     */
     private boolean isFilterApplied = false;
 
+    /**
+     * Panels for displaying view and creation modes.
+     */
     private JPanel viewMode = new JPanel(new BorderLayout());
     private JPanel creationMode;
+
+    /**
+     * Scroll pane for displaying content with added scrolling functionality.
+     */
     private JScrollPane viewScrollPane;
+
+    /**
+     * Main frame for the view.
+     */
     private JFrame frame;
 
-    public EmployeeView(EmployeeController controller) {
+    /**
+     * Constructor that initializes the EmployeeView with a list controller.
+     *
+     * @param controller The controller for doubly-linked list employee data logic.
+     */
+    public EmployeeView(ListController controller) {
+        // Initialize the employee controller with the provided controller.
         this.employeeController = controller;
-        currentEmployee = null;
 
+        // Create a new ViewController instance and associate it with this view.
+        this.viewController = new ViewController(this);
+
+        // Initialize the currentEmployee to null since no employee is selected initially.
+        this.currentEmployee = null;
+
+        // Initialize the current employee node as the first node in the list.
         currentEmployeeNode = employeeController.getFirstNode();
 
-
         try {
+            // Set the look and feel to Nimbus for a modified UI appearance.
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception e) {
+            // Handle any exceptions that occur during look and feel setup and print the stack trace.
             e.printStackTrace();
         }
 
+        // Create a new JFrame for the application that will encapsulate the rest of elements.
         frame = new JFrame("Employee Management");
+
+        // Create an ImageIcon from an image file to serve as the window icon.
+        ImageIcon icon = createImageIcon("resources/caimicon.png");
+
+        if (icon != null) {
+            // Set the window icon.
+            frame.setIconImage(icon.getImage());
+        }
+
+        // Set the default close operation to exit the application when the frame is closed.
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Set the initial size of the frame to 500x300 pixels. It will be able to be rescaled.
         frame.setSize(500, 300);
 
         // Create GUI components
 
-        nameField = createLimitedTextField(20, placeHolderName, 50);
-        employeeNumberField = createLimitedTextField(20, placeHolderNumber, 5);
-        hireDateField = createLimitedTextField(20, placeHolderDate, 10);
-        phoneField = createLimitedTextField(20, placeHolderPhone, 9);
-        emailField = createLimitedTextField(20, placeHolderEmail, 30);
+        // Create text fields for user input and set placeholders.
+        nameField = viewController.createLimitedTextField(20, placeHolderName, 50);
+        employeeNumberField = viewController.createLimitedTextField(20, placeHolderNumber, 5);
+        hireDateField = viewController.createLimitedTextField(20, placeHolderDate, 10);
+        phoneField = viewController.createLimitedTextField(20, placeHolderPhone, 9);
+        emailField = viewController.createLimitedTextField(20, placeHolderEmail, 30);
 
+        // Set the horizontal and vertical alignment of the employee info to center.
         employeeInfoLabel.setHorizontalAlignment(JLabel.CENTER);
         employeeInfoLabel.setVerticalAlignment(JLabel.CENTER);
 
+        // Create panels to organize the view mode and creation mode.
         viewMode = new JPanel(new BorderLayout());
+        viewMode.setBackground(new java.awt.Color(250, 255, 251));
         creationMode = new JPanel(new BorderLayout());
 
-        // Create buttons for view mode
+        // Create buttons for the view mode.
         backButton = new JButton("Back");
         nextButton = new JButton("Next");
         deleteButton = new JButton("Delete");
@@ -87,8 +176,11 @@ public class EmployeeView {
         modifyButton = new JButton("Modify");
         filterButton = new JButton("Apply Filter");
 
-        // Add buttons to view mode panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        // Set attributes using the ViewController instance.
+        viewController.setAllAttributes();
+
+        // Create a panel to hold the buttons in the view mode.
+        JPanel buttonPanel = new JPanel(new FlowLayout()); // FlowLayout has centered alignment and a 5-unit horizontal gap by default.
         buttonPanel.add(backButton);
         buttonPanel.add(nextButton);
         buttonPanel.add(deleteButton);
@@ -96,609 +188,248 @@ public class EmployeeView {
         buttonPanel.add(modifyButton);
         buttonPanel.add(filterButton);
 
+        // Add the button panel to the view mode panel in the south position.
         viewMode.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Set the background color of buttons.
+        backButton.setBackground(new java.awt.Color(204, 247, 255));
+        nextButton.setBackground(new java.awt.Color(204, 247, 255));
+        deleteButton.setBackground(new java.awt.Color(255, 179, 179));
+        createButton.setBackground(new java.awt.Color(204, 255, 212));
+        modifyButton.setBackground(new java.awt.Color(255, 230, 204));
+        filterButton.setBackground(new java.awt.Color(246, 204, 255));
+
+        // Add the button panel to the view mode panel in the south position.
+        viewMode.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add the employeeInfoLabel to the view mode panel in the center.
         viewMode.add(employeeInfoLabel, BorderLayout.CENTER);
 
-        updateButtonStates();
+        // Update button states based on the current mode.
+        viewController.updateButtonStates();
 
-        // Create a scroll pane for the view mode
+        // Create a scroll pane for the view mode.
         viewScrollPane = new JScrollPane(viewMode);
+
+        // Add the view scroll pane to the main frame.
         frame.add(viewScrollPane);
 
-        // Initially, start in view mode
-        switchToViewMode();
+        // Initially, set the view mode using ViewController.
+        viewController.switchToViewMode();
 
+        // Make the main frame visible to the user.
         frame.setVisible(true);
-    }
-
-    private void addPlaceholder(JTextField field, String placeholder) {
-        field.setText(placeholder);
-        field.setForeground(Color.GRAY);
-
-        field.addFocusListener(new FocusListener() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (field.getText().equals(placeholder)) {
-                    field.setText("");
-                    field.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (field.getText().isEmpty()) {
-                    field.setText(placeholder);
-                    field.setForeground(Color.GRAY);
-                }
-            }
-        });
-    }
-
-    private JTextField createLimitedTextField(int columns, String placeholder, int maxChars) {
-        JTextField textField = new JTextField(columns);
-        addPlaceholder(textField, placeholder);
-        setCharacterLimit(textField, maxChars);
-        return textField;
-    }
-
-    private void setCharacterLimit(JTextField textField, int limit) {
-        Document document = textField.getDocument();
-        if (document instanceof PlainDocument) {
-            PlainDocument plainDocument = (PlainDocument) document;
-            plainDocument.setDocumentFilter(new DocumentFilter() {
-                @Override
-                public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
-                    if ((fb.getDocument().getLength() + string.length()) <= limit) {
-                        super.insertString(fb, offset, string, attr);
-                    }
-                }
-
-                @Override
-                public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
-                    if ((fb.getDocument().getLength() + text.length() - length) <= limit) {
-                        super.replace(fb, offset, length, text, attrs);
-                    }
-                }
-            });
-        }
-    }
-
-    private void switchToViewMode() {
-        // Remove the components of the view mode
-        viewMode.removeAll();
-
-        // Clear existing action listeners
-        clearActionListeners();
-
-        // Display the current employee's information
-        displayCurrentEmployee();
-
-        // Add the view mode buttons
-        JPanel viewModeButtons = createViewModeButtons();
-        viewMode.add(viewModeButtons, BorderLayout.SOUTH);
-        viewMode.add(employeeInfoLabel, BorderLayout.CENTER);
-
-        // Update button states
-        updateButtonStates();
-
-        // Revalidate and repaint the view mode panel
-        viewMode.revalidate();
-        viewMode.repaint();
-
-        // Debugging: Print current employee information and node details
-        if (currentEmployeeNode != null) {
-            System.out.println("Current Employee: " + currentEmployeeNode.getMain());
-            System.out.println("Current Employee Node: " + currentEmployeeNode);
-        } else {
-            System.out.println("Current Employee: null");
-        }
-
-        // Check if currentEmployeeNode is null, and if so, reset it to the first employee
-        if (currentEmployeeNode == null) {
-            currentEmployeeNode = employeeController.getFirstNode();
-            System.out.println("Resetting currentEmployeeNode to the first employee.");
-        }
-    }
-
-
-
-    private void switchToCreationMode() {
-        // Remove the components of the view mode
-        viewMode.removeAll();
-
-        // Add the creation mode components and buttons
-        viewMode.add(createCreationModeComponents(), BorderLayout.CENTER);
-        viewMode.add(createCreationModeButtons(), BorderLayout.SOUTH);
-
-        // Revalidate and repaint the view mode panel
-        viewMode.revalidate();
-        viewMode.repaint();
-
-        // Check if there is an action listener registered before attempting to remove it
-        ActionListener[] actionListeners = filterButton.getActionListeners();
-        if (actionListeners.length > 0) {
-            filterButton.removeActionListener(actionListeners[0]);
-        }
-    }
-
-    private JPanel createViewModeButtons() {
-        // Add action listeners for view mode buttons
-        nextButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null) {
-                    EmployeeController<EmployeeModel>.Node<EmployeeModel> nextEmployeeNode = currentEmployeeNode.getNextNode();
-
-                    while (nextEmployeeNode != null) {
-                        EmployeeModel nextEmployee = nextEmployeeNode.getMain();
-                        if (!isFilterApplied || (nextEmployee.getHireDate() != null && nextEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
-                            currentEmployeeNode = nextEmployeeNode;
-                            displayCurrentEmployee();
-                            updateButtonStates();
-                            return;
-                        }
-                        nextEmployeeNode = nextEmployeeNode.getNextNode();
-                    }
-                }
-            }
-        });
-
-        backButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null) {
-                    EmployeeController<EmployeeModel>.Node<EmployeeModel> previousEmployeeNode = currentEmployeeNode.getPreviousNode();
-
-                    while (previousEmployeeNode != null) {
-                        EmployeeModel previousEmployee = previousEmployeeNode.getMain();
-                        if (!isFilterApplied || (previousEmployee.getHireDate() != null && previousEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
-                            currentEmployeeNode = previousEmployeeNode;
-                            displayCurrentEmployee();
-                            updateButtonStates();
-                            return;
-                        }
-                        previousEmployeeNode = previousEmployeeNode.getPreviousNode();
-                    }
-                }
-            }
-        });
-
-
-        System.out.println("Adding ActionListener to deleteButton");
-        deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null) {
-                    // Prompt the user for confirmation before deleting
-                    int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete this employee?", "Confirmation", JOptionPane.YES_NO_OPTION);
-
-                    if (option == JOptionPane.YES_OPTION) {
-                        // Get the current employee
-                        EmployeeModel currentEmployee = currentEmployeeNode.getMain();
-
-                        // Call your EmployeeController's method to remove the current employee
-                        employeeController.remove(currentEmployee);
-
-                        // Try to get the next employee after deletion
-                        currentEmployeeNode = currentEmployeeNode.getNextNode();
-
-                        // Update the view to display the next employee (if available)
-                        displayCurrentEmployee();
-
-                        // Update button states
-                        updateButtonStates();
-
-                        // Optionally, you can show a message if there are no more employees
-                        if (currentEmployeeNode == null) {
-                            JOptionPane.showMessageDialog(frame, "No more employees to display.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                        }
-                    }
-                } else {
-                    // Handle case where there's no current employee to delete
-                    JOptionPane.showMessageDialog(frame, "No employee to delete.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-        });
-
-
-
-        createButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentMode = Mode.CREATE; // Set the mode to Create
-                switchToCreationMode();
-            }
-        });
-
-        modifyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentEmployeeNode != null) {
-                    currentMode = Mode.MODIFY; // Set the mode to Modify
-
-                    // Get the currently selected employee's data
-                    EmployeeModel selectedEmployee = currentEmployeeNode.getMain();
-
-                    // Populate the input fields with the selected employee's data
-                    nameField.setText(selectedEmployee.getName());
-                    employeeNumberField.setText(String.valueOf(selectedEmployee.getEmployeeNumber()));
-
-                    // Check if hireDate is null and provide a placeholder or an empty string
-                    GregorianCalendar hireDate = selectedEmployee.getHireDate();
-                    if (hireDate != null) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                        String formattedDate = dateFormat.format(hireDate.getTime());
-                        hireDateField.setText(formattedDate);
-                        phoneField.setText(selectedEmployee.getPhoneNumber());
-                        emailField.setText(selectedEmployee.getEmailAddress());
-                    } else {
-                        hireDateField.setText(placeHolderDate); // Set a placeholder or empty string
-                    }
-
-
-                    switchToCreationMode();
-                } else {
-                    JOptionPane.showMessageDialog(frame, "No employee to modify.", "Info", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-        });
-
-
-
-        filterButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                toggleFilterButton();
-                displayCurrentEmployee();
-                updateButtonStates();
-            }
-        });
-
-
-
-        // Disable the back button if there's no previous employee
-        backButton.setEnabled(currentEmployeeNode != null && currentEmployeeNode.getPreviousNode() != null);
-
-        // Disable the next button if there's no next employee
-        nextButton.setEnabled(currentEmployeeNode != null && currentEmployeeNode.getNextNode() != null);
-
-
-        // Add buttons to view mode panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(backButton);
-        buttonPanel.add(nextButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(createButton);
-        buttonPanel.add(modifyButton);
-        buttonPanel.add(filterButton);
-
-        viewMode.add(buttonPanel, BorderLayout.SOUTH);
-
-        return buttonPanel;
 
     }
 
-    private void updateButtonStates() {
-        // Disable the back button if there's no previous employee matching the filter
-        backButton.setEnabled(currentEmployeeNode != null && hasPreviousMatchingEmployee(currentEmployeeNode));
-
-        // Disable the next button if there's no previous employee matching the filter
-        nextButton.setEnabled(currentEmployeeNode != null && hasNextMatchingEmployee(currentEmployeeNode));
-
-        // Disable the delete button if there's no current employee
-        deleteButton.setEnabled(currentEmployeeNode != null);
-    }
-
-    private boolean hasPreviousMatchingEmployee(EmployeeController<EmployeeModel>.Node<EmployeeModel> node) {
-        if (node == null) {
-            return false;
-        }
-
-        EmployeeController<EmployeeModel>.Node<EmployeeModel> previousNode = node.getPreviousNode();
-        while (previousNode != null) {
-            EmployeeModel previousEmployee = previousNode.getMain();
-            if (!isFilterApplied || (previousEmployee.getHireDate() != null && previousEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
-                return true;
-            }
-            previousNode = previousNode.getPreviousNode();
-        }
-        return false;
-    }
-
-    private boolean hasNextMatchingEmployee(EmployeeController<EmployeeModel>.Node<EmployeeModel> node) {
-        if (node == null) {
-            return false;
-        }
-
-        EmployeeController<EmployeeModel>.Node<EmployeeModel> nextNode = node.getNextNode();
-        while (nextNode != null) {
-            EmployeeModel nextEmployee = nextNode.getMain();
-            if (!isFilterApplied || (nextEmployee.getHireDate() != null && nextEmployee.getHireDate().get(Calendar.YEAR) == 2023)) {
-                return true;
-            }
-            nextNode = nextNode.getNextNode();
-        }
-        return false;
-    }
-
-
-    private void toggleFilterButton() {
-        isFilterApplied = !isFilterApplied;
-        filterButton.setText(isFilterApplied ? "Undo Filter" : "Apply Filter");
-        if (isFilterApplied) {
-            // Handle applying the filter
-        } else {
-            // Handle undoing the filter
-        }
-    }
-
-
-    private JPanel createCreationModeComponents() {
-        // Create components for creation mode
-        JPanel creationComponents = new JPanel(new GridLayout(5, 2));
-        creationComponents.add(new JLabel("<html>Name <b><font color='red'>*</font></b></html>"));
-        creationComponents.add(nameField);
-        creationComponents.add(new JLabel("<html>Employee Number <b><font color='red'>*</font></b></html>"));
-        creationComponents.add(employeeNumberField);
-        creationComponents.add(new JLabel("Hire Date"));
-        creationComponents.add(hireDateField);
-        creationComponents.add(new JLabel("Phone"));
-        creationComponents.add(phoneField);
-        creationComponents.add(new JLabel("Email"));
-        creationComponents.add(emailField);
-
-        return creationComponents;
-    }
-
-    private JPanel createCreationModeButtons() {
-        // Create buttons for creation mode
-        JButton acceptButton = new JButton("Accept");
-        JButton cancelButton = new JButton("Cancel");
-
-        // Add action listeners for creation mode buttons
-        acceptButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                acceptButtonAction();
-            }
-        });
-
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                switchToViewMode();
-            }
-        });
-
-        // Add buttons to creation mode panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(acceptButton);
-        buttonPanel.add(cancelButton);
-
-        return buttonPanel;
-    }
-
-    private void acceptButtonAction() {
+    /**
+     * Loads an image file from the given path and creates an ImageIcon from it.
+     *
+     * @param path The file path of the image to load.
+     * @return An ImageIcon created from the loaded image, or null if an error occurs.
+     */
+    private ImageIcon createImageIcon(String path) {
         try {
-            // Parse the input data from the text fields
-            int employeeNumber = 0;
-            String name = nameField.getText().trim();
-            String hireDate = hireDateField.getText().trim();
-            String phoneNumber = phoneField.getText().trim();
-            String emailAddress = emailField.getText().trim();
+            // Read the image file into a BufferedImage.
+            BufferedImage image = ImageIO.read(new File(path));
 
-            // Check if name and employee number are not left blank
-            if (name.isEmpty() || employeeNumberField.getText().isEmpty() || name.equals(placeHolderName)) {
-                JOptionPane.showMessageDialog(frame, "Name and employee number cannot be blank.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check if name contains any numbers
-            if (name.matches(".*\\d+.*")) {
-                JOptionPane.showMessageDialog(frame, "Name cannot contain numbers.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Parse the employee number if it's not empty
-            if (!employeeNumberField.getText().isEmpty()) {
-                try {
-                    employeeNumber = Integer.parseInt(employeeNumberField.getText());
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(frame, "Employee number must be a valid integer.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            }
-
-            // Check if other fields are empty or contain placeholder values
-            boolean anyFieldsEmpty = (hireDate.isEmpty() || hireDate.equals(placeHolderDate)) ||
-                    (phoneNumber.isEmpty() || phoneNumber.equals(placeHolderPhone)) ||
-                    (emailAddress.isEmpty() || emailAddress.equals(placeHolderEmail));
-
-            if (anyFieldsEmpty) {
-                int option = JOptionPane.showConfirmDialog(frame,
-                        "You have the option to provide more information (hire date, phone, email). Do you want to proceed with just name and employee number?",
-                        "Confirmation",
-                        JOptionPane.YES_NO_OPTION);
-
-                if (option == JOptionPane.NO_OPTION) {
-                    // User chose not to proceed with only name and employee number
-                    return;
-                }
-            }
-
-            if (currentMode == Mode.CREATE) {
-                // Create a new EmployeeModel object with the provided input
-                EmployeeModel newEmployee = new EmployeeModel(name, employeeNumber);
-
-                if (!anyFieldsEmpty) {
-                    // If other fields are not empty, use the full constructor
-                    newEmployee = new EmployeeModel(name, employeeNumber, hireDate, phoneNumber, emailAddress);
-                }
-
-                // Add the new employee to the controller's list
-                employeeController.add(newEmployee);
-
-                // Set the current employee node to the newly added employee node
-                if (currentEmployeeNode == null) {
-                    currentEmployeeNode = employeeController.getFirstNode();
-                }
-
-                JOptionPane.showMessageDialog(frame, "Employee added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } else if (currentMode == Mode.MODIFY) {
-                // Modify the existing employee with the provided input
-                if (currentEmployeeNode != null) {
-                    EmployeeModel selectedEmployee = currentEmployeeNode.getMain();
-                    String modifiedName = nameField.getText().trim();
-                    int modifiedEmployeeNumber = Integer.parseInt(employeeNumberField.getText());
-                    String modifiedHireDate = hireDateField.getText().trim();
-                    String modifiedPhone = phoneField.getText().trim();
-                    String modifiedEmail = emailField.getText().trim();
-
-                    // Update the current employee with modified data
-                    if (anyFieldsEmpty) {
-                        selectedEmployee.setName(modifiedName);
-                        selectedEmployee.setEmployeeNumber(modifiedEmployeeNumber);
-                    } else {
-                        selectedEmployee.setName(modifiedName);
-                        selectedEmployee.setEmployeeNumber(modifiedEmployeeNumber);
-                        selectedEmployee.setHireDate(selectedEmployee.createGregorianCalendar(modifiedHireDate));
-                        selectedEmployee.setPhoneNumber(modifiedPhone);
-                        selectedEmployee.setEmailAddress(modifiedEmail);
-                    }
-
-                    currentEmployee = selectedEmployee; // Set the modified employee as the current employee
-
-                    JOptionPane.showMessageDialog(frame, "Employee modified successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-
-            // Switch back to the view mode
-            switchToViewMode();
-
-            // Optionally, you can clear the input fields
-            clearFields();
-        } catch (IllegalArgumentException e) {
-            // Handle any other unexpected validation errors
-            JOptionPane.showMessageDialog(frame, "Invalid input. Please check the data.", "Error", JOptionPane.ERROR_MESSAGE);
+            // Create an ImageIcon from the loaded image.
+            return new ImageIcon(image);
+        } catch (IOException e) {
+            // Handle any IOException that occurs during image loading.
+            e.printStackTrace();
+            return null;
         }
     }
 
-    private void clearFields() {
-        // Reapply the placeholders to the text fields
-        addPlaceholder(nameField, placeHolderName);
-        addPlaceholder(employeeNumberField, placeHolderNumber);
-        addPlaceholder(hireDateField, placeHolderDate);
-        addPlaceholder(phoneField, placeHolderPhone);
-        addPlaceholder(emailField, placeHolderEmail);
+    /**
+     * Get the controller for managing employee data.
+     *
+     * @return The ListController containing employee data.
+     */
+    public ListController<EmployeeModel> getEmployeeController() {
+        return employeeController;
     }
 
-    private void clearActionListeners() {
-        ActionListener[] backListeners = backButton.getActionListeners();
-        for (ActionListener listener : backListeners) {
-            backButton.removeActionListener(listener);
-        }
+    /**
+     * Get the currently selected employee model.
+     *
+     * @return The current EmployeeModel.
+     */
+    public EmployeeModel getCurrentEmployee() {
+        return currentEmployee;
+    }
 
-        ActionListener[] nextListeners = nextButton.getActionListeners();
-        for (ActionListener listener : nextListeners) {
-            nextButton.removeActionListener(listener);
-        }
+    /**
+     * Get the label used for displaying employee information.
+     *
+     * @return The JLabel used for displaying employee information.
+     */
+    public JLabel getEmployeeInfoLabel() {
+        return employeeInfoLabel;
+    }
 
-        ActionListener[] deleteListeners = deleteButton.getActionListeners();
-        for (ActionListener listener : deleteListeners) {
-            deleteButton.removeActionListener(listener);
-        }
+    /**
+     * Get the node representing the current employee in the linked list.
+     *
+     * @return The ListController.Node representing the current employee.
+     */
+    public ListController<EmployeeModel>.Node<EmployeeModel> getCurrentEmployeeNode() {
+        return currentEmployeeNode;
+    }
 
-        ActionListener[] createListeners = createButton.getActionListeners();
-        for (ActionListener listener : createListeners) {
-            createButton.removeActionListener(listener);
-        }
+    /**
+     * Get the text field for entering the employee's name.
+     *
+     * @return The JTextField for the employee's name.
+     */
+    public JTextField getNameField() {
+        return nameField;
+    }
 
-        ActionListener[] modifyListeners = modifyButton.getActionListeners();
-        for (ActionListener listener : modifyListeners) {
-            modifyButton.removeActionListener(listener);
-        }
+    /**
+     * Get the text field for entering the employee's number.
+     *
+     * @return The JTextField for the employee's number.
+     */
+    public JTextField getEmployeeNumberField() {
+        return employeeNumberField;
+    }
 
-        ActionListener[] filterListeners = filterButton.getActionListeners();
-        for (ActionListener listener : filterListeners) {
-            filterButton.removeActionListener(listener);
-        }
+    /**
+     * Get the text field for entering the employee's hire date.
+     *
+     * @return The JTextField for the employee's hire date.
+     */
+    public JTextField getHireDateField() {
+        return hireDateField;
+    }
+
+    /**
+     * Get the text field for entering the employee's phone number.
+     *
+     * @return The JTextField for the employee's phone number.
+     */
+    public JTextField getPhoneField() {
+        return phoneField;
+    }
+
+    /**
+     * Get the text field for entering the employee's email address.
+     *
+     * @return The JTextField for the employee's email address.
+     */
+    public JTextField getEmailField() {
+        return emailField;
+    }
+
+    /**
+     * Get the "Back" button for navigating in the view.
+     *
+     * @return The "Back" JButton.
+     */
+    public JButton getBackButton() {
+        return backButton;
+    }
+
+    /**
+     * Get the "Next" button for navigating in the view.
+     *
+     * @return The "Next" JButton.
+     */
+    public JButton getNextButton() {
+        return nextButton;
+    }
+
+    /**
+     * Get the "Delete" button for removing an employee.
+     *
+     * @return The "Delete" JButton.
+     */
+    public JButton getDeleteButton() {
+        return deleteButton;
+    }
+
+    /**
+     * Get the "Create" button for creating a new employee.
+     *
+     * @return The "Create" JButton.
+     */
+    public JButton getCreateButton() {
+        return createButton;
+    }
+
+    /**
+     * Get the "Modify" button for editing an employee.
+     *
+     * @return The "Modify" JButton.
+     */
+    public JButton getModifyButton() {
+        return modifyButton;
+    }
+
+    /**
+     * Get the "Apply Filter" button for applying a filter.
+     *
+     * @return The "Apply Filter" JButton.
+     */
+    public JButton getFilterButton() {
+        return filterButton;
+    }
+
+    /**
+     * Check if a filter is currently applied.
+     *
+     * @return true if a filter is applied, false otherwise.
+     */
+    public boolean isFilterApplied() {
+        return isFilterApplied;
+    }
+
+    /**
+     * Get the panel for displaying the view mode.
+     *
+     * @return The JPanel for view mode.
+     */
+    public JPanel getViewMode() {
+        return viewMode;
+    }
+
+    /**
+     * Get the panel for displaying the creation mode.
+     *
+     * @return The JPanel for creation mode.
+     */
+    public JPanel getCreationMode() {
+        return creationMode;
+    }
+
+    /**
+     * Get the scroll pane for displaying content in the view.
+     *
+     * @return The JScrollPane for view content.
+     */
+    public JScrollPane getViewScrollPane() {
+        return viewScrollPane;
+    }
+
+    /**
+     * Get the current mode of the view.
+     *
+     * @return The current Mode of the view.
+     */
+    public Mode getCurrentMode() {
+        return currentMode;
+    }
+
+    /**
+     * Get the main frame for the view.
+     *
+     * @return The main JFrame for the view.
+     */
+    public JFrame getFrame() {
+        return frame;
     }
 
 
-    private void displayCurrentEmployee() {
-        if (currentEmployeeNode != null) {
-            EmployeeModel employee = currentEmployeeNode.getMain();
-            int currentPosition = employeeController.getPosition(employee) + 1;
-            int totalEmployees = employeeController.getTotalElements();
-
-            // Create HTML-formatted text to display information
-            StringBuilder labelText = new StringBuilder("<html>");
-            labelText.append("<h2 style='color: #007acc;'>Employee #").append(currentPosition).append(" of ").append(totalEmployees).append("</h2><br>");
-            labelText.append("<font color='#008000'><b>Name:</b></font> ").append(employee.getName()).append("<br>");
-            labelText.append("<font color='#008000'><b>Employee Number:</b></font> ").append(employee.getEmployeeNumber()).append("<br>");
-
-            if (isFilterApplied) {
-                // Check if hireDate is null or not in 2023, and skip employees who don't match the filter
-                if (employee.getHireDate() == null || employee.getHireDate().get(Calendar.YEAR) != 2023) {
-                    // Find the next matching employee
-                    EmployeeController<EmployeeModel>.Node<EmployeeModel> nextEmployeeNode = currentEmployeeNode;
-                    while (nextEmployeeNode != null && (nextEmployeeNode.getMain().getHireDate() == null
-                            || nextEmployeeNode.getMain().getHireDate().get(Calendar.YEAR) != 2023)) {
-                        nextEmployeeNode = nextEmployeeNode.getNextNode();
-                    }
-
-                    if (nextEmployeeNode != null) {
-                        currentEmployeeNode = nextEmployeeNode;
-                        employee = currentEmployeeNode.getMain();
-                        currentPosition = employeeController.getPosition(employee) + 1;
-                    } else {
-                        labelText.append("No more employees hired in 2023 to display.");
-                        employeeInfoLabel.setText(labelText.toString());
-                        return;
-                    }
-                }
-            }
-
-            // Check if hireDate, phone, and email are not null or empty
-            if (employee.getHireDate() != null) {
-                labelText.append("<font color='#008000'><b>Hire Date:</b></font> ").append(formatGregorianCalendar(employee.getHireDate())).append("<br>");
-            } else {
-                labelText.append("<font color='red'><b>Hire Date:</b></font> Not specified yet<br>");
-            }
-
-            if (!employee.getPhoneNumber().isEmpty()) {
-                labelText.append("<font color='green'><b>Phone:</b></font> ").append(employee.getPhoneNumber()).append("<br>");
-            } else {
-                labelText.append("<font color='red'><b>Phone:</b></font> Not specified yet<br>");
-            }
-
-            if (!employee.getEmailAddress().isEmpty()) {
-                labelText.append("<font color='green'><b>Email:</b></font> ").append(employee.getEmailAddress()).append("<br>");
-            } else {
-                labelText.append("<font color='red'><b>Email:</b></font> Not specified yet<br>");
-            }
-
-            labelText.append("</html>");
-            employeeInfoLabel.setText(labelText.toString());
-        } else {
-            // Handle case where there's no current employee
-            employeeInfoLabel.setText("No employee to display.");
-        }
-    }
-
-    // Helper method to format a GregorianCalendar instance to "dd/MM/yyyy" format
-    private String formatGregorianCalendar(GregorianCalendar calendar) {
-        SimpleDateFormat simplifiefDate = new SimpleDateFormat("dd/MM/yyyy");
-        return simplifiefDate.format(calendar.getTime());
-    }
-
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                EmployeeController<EmployeeModel> controller = new EmployeeController<>(); // Specify the type parameter
-                new EmployeeView(controller);
-            }
-        });
-    }
 }
