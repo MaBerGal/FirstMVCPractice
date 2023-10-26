@@ -2,10 +2,9 @@
 My first Java project on GitHub. Simple mock-up program for employee management applying the MVC philosophy.
 
 <p align="center">
-  <img src="https://github.com/MaBerGal/PracticeMVC/assets/148444718/b2f4d190-39de-448f-a9f6-f493607536e5)" />
-  <img src="https://github.com/MaBerGal/PracticeMVC/assets/148444718/2cb4438d-c9da-44c2-b683-bcca0606ca5c)" />
+  <img src="https://github.com/MaBerGal/PracticeMVC/assets/148444718/b2f4d190-39de-448f-a9f6-f493607536e5" />
+  <img src="https://github.com/MaBerGal/PracticeMVC/assets/148444718/ff751d67-bfba-41de-907c-3c95870a123f" />
 </p>
-
 
 ### Version History
 * _Alpha version:_
