@@ -1,5 +1,5 @@
 # Employee Management App (MVC Practice)
-My first Java project on GitHub. Simple mock-up program for employee management applying the MVC philosophy.
+My first Java project on GitHub. Simple mock-up program for employee management using Swing and applying the MVC philosophy. 
 
 <p align="center">
   <img src="https://github.com/MaBerGal/PracticeMVC/assets/148444718/562270b5-2403-4be1-a551-d0e021cbf0f3" />
